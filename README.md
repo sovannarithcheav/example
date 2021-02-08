@@ -4,6 +4,6 @@
 
 2. Install [deliverybot](https://github.com/apps/deliverybot) on the new repo.
 
-3. Push a commit to your new fork and watch the example workflows kick off!
+3. Push a commit to your new fork and watch the example workflows kick off! !!!
 
 4. Visit the [deliverybot app](https://app.deliverybot.dev) and manually deploy.
