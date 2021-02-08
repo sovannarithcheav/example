@@ -1,57 +1,44 @@
-name: 'Deploy'
-on: ['deployment']
+name: Deploy
+on: 
+  push:
+    branches: [master]
 
 jobs:
-  deployment:
-    runs-on: 'ubuntu-latest'
+  deploy:
+    name: Deploy my app
+
+    runs-on: ubuntu-latest
+
     steps:
-    - name: 'Checkout'
-      uses: 'actions/checkout@v1'
+      - uses: actions/checkout@v1
 
-    - name: 'Deployment pending'
-      uses: 'deliverybot/deployment-status@master'
-      with:
-        state: 'pending'
-        token: '${{ github.token }}'
+      - uses: chrnorm/deployment-action@releases/v1
+        name: Create GitHub deployment
+        id: deployment
+        with:
+          token: "${{ github.token }}"
+          environment: staging ...
 
-    - name: 'Deploy ${{ github.event.deployment.environment }}'
-      run: |
-        echo "task - ${{ github.event.deployment.task }}"
-        echo "environment - ${{ github.event.deployment.task }}"
-        echo "payload - ${{ github.event.deployment.payload }}"
+      - name: 'Deploy ${{ github.event.deployment.environment }}'
+        run: |
+          echo "task - ${{ github.event.deployment.task }}"
+          echo "environment - ${{ github.event.deployment.task }}"
+          echo "payload - ${{ github.event.deployment.payload }}"
 
-    - name: 'Deployment success'
-      if: success()
-      uses: 'deliverybot/deployment-status@master'
-      with:
-        state: 'success'
-        token: '${{ github.token }}'
+      - name: Update deployment status (success)
+        if: success()
+        uses: chrnorm/deployment-status@releases/v1
+        with:
+          token: "${{ github.token }}"
+          target_url: http://my-app-url.com
+          state: "success"
+          deployment_id: ${{ steps.deployment.outputs.deployment_id }}
 
-    - name: 'Deployment failure'
-      if: failure()
-      uses: 'deliverybot/deployment-status@master'
-      with:
-        state: 'failure'
-        token: '${{ github.token }}'
-
-    - name: get pull request ref
-      id: get_pull_request_ref
-      uses: octokit/request-action@v2.x
-      with:
-        route: GET /repos/:repository/pulls/:issue_id
-        repository: ${{ github.repository }}
-        issue_id: ${{ github.event.issue.number }}
-      env:
-        GITHUB_TOKEN: "${{ secrets.GITHUB_TOKEN }}"
-
-    - name: create deployment
-      id: create_deployment
-      uses: octokit/request-action@v2.x
-      with:
-        route: POST /repos/:repository/deployments
-        repository: ${{ github.repository }}
-        ref: ${{ fromJson(steps.get_pull_request_ref.outputs.data).head.ref }}
-        environment: dev
-        auto_merge: false
-      env:
-        GITHUB_TOKEN: "${{ secrets.GITHUB_TOKEN }}"
+      - name: Update deployment status (failure)
+        if: failure()
+        uses: chrnorm/deployment-status@releases/v1
+        with:
+          token: "${{ github.token }}"
+          target_url: http://my-app-url.com
+          state: "failure"
+          deployment_id: ${{ steps.deployment.outputs.deployment_id }}
